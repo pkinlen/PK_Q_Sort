@@ -16,7 +16,6 @@ import java.util.Random;
 
 // Possible extensions:
 // -allow sorting to be both ascending and descending
-// -make a better choice of the pivot, look into efficiency when the array is already sorted
 // -could it be made generic?
 // -if the arr were put into it's own class, then it need not be passes as a parameter
 
