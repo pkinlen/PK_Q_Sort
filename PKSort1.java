@@ -17,8 +17,11 @@ import java.util.Random;
 // Possible extensions:
 // -allow sorting to be both ascending and descending
 // -could it be made generic?
-// -if the arr were put into it's own class, then it need not be passed as a parameter
-
+// -if the arr were put into it's own class, then it need not be passed as a parameter,
+//     though would need to think about multi-thread safety.
+// -suppose it is given an array that is already fully sorted, 
+//   could we make it more efficient?
+// how about an array that is sorted in the wrong direction.
 // Author: Philip Kinlen
 public class PKSort1 {
 	
@@ -29,9 +32,11 @@ public class PKSort1 {
          Random randGen = new Random(); // have an optional arg, which is the rand seed, 
                                         // default seed is the timer.
                   
-         int numElms = 200;
-         double[] arr = generateRandArr(numElms, randGen);
+         int numElms = 10;
+         double[] arr = generateOrderedArr(numElms, false);
+        		        // generateRandArr(numElms, randGen);
                         // = generateOrderedArr(numElms, true);
+                  
          System.out.println("Here's the array before sorting:");
          printArr(arr);
          
@@ -47,58 +52,50 @@ public class PKSort1 {
        pkSortSub(arr, 0, arr.length - 1 );
     }
     //////////////////////////////////////////////////////////////////////////////
-    private static void pkSortSub(double[] arr, int left, int right){    
+    private static void pkSortSub(double[] arr, int low, int high){    
        int available;
     
-       if ( left >= right) // when there are 0 or 1 elements, there is nothing to be done.
+       if ( low >= high) // when there are 0 or 1 elements, there is nothing to be done.
           return;
        else { // the reason we use this 'else' here is because we want the 'double pivot'
-              // to have been released before we recursively call this function.
+              // to have been cleared from the stack before we recursively call this function.
 
-	       int     mid             = ( right + left ) / 2;
-	       double  pivot;  // we set the pivot to be the median of the left, mid and right elements.
+	       int     mid             = ( low + high ) / 2;
+	       double  pivot;  // we set the pivot to be the median of the low, mid and high elements.
 	       
-	       if ( (arr[right] > arr[left]) == (arr[left] > arr[mid])) {
-	    	   pivot       = arr[left];
-	       } else if ( (arr[left] > arr[mid]) == (arr[mid] > arr[right])) {		    	   
+	       if ( (arr[high] > arr[low]) == (arr[low] > arr[mid])) {
+	    	   pivot       = arr[low];
+	       } else if ( (arr[low] > arr[mid]) == (arr[mid] > arr[high])) {		    	   
 		       pivot       = arr[mid];
-		       arr[mid]    = arr[left];
+		       arr[mid]    = arr[low];
 		   } else { 
-	    	   pivot       = arr[right]; 
-	    	   arr[right]  = arr[left];		       
+	    	   pivot       = arr[high]; 
+	    	   arr[high]  = arr[low];		       
            }
-	       available = left;
+	       available = low; // we can now write over arr[low]
 	    	
-	       boolean workingFromLeft = false;
-	       int     leftIdx         = left;
-	       int     rightIdx        = right + 1;
+	       boolean workingFromLow  = false;
+	       int     lowIdx          = low;
+	       int     highIdx         = high + 1;
 
-	       while ( leftIdx < rightIdx){
-  	           int     current;
-  	           
-  	           boolean doSwitch;
+	       while ( lowIdx < highIdx){
 	    	   
-	           if (workingFromLeft){
-	              leftIdx++;
-	              current  = leftIdx;
-	              doSwitch = (arr[current] > pivot);
-	           } else {
-	              rightIdx--;
-	              current  = rightIdx;
-	              doSwitch = (pivot > arr[current]);
+	           if ((workingFromLow) && (arr[++lowIdx] > pivot)){
+		           arr[available]   = arr[lowIdx];
+		           available        = lowIdx;
+		           workingFromLow   = false;         
+		           
+	           } else if ((!workingFromLow) && (pivot > arr[--highIdx])){
+		           arr[available]   = arr[highIdx];
+		           available        = highIdx;
+		           workingFromLow   = true;           	            	  
 	           }
-	           
-	           if( doSwitch){	        	   
-	               workingFromLeft  = !workingFromLeft; // toggle
-	               arr[available]   = arr[current];
-	               available        = current;
-	           }
-	        }    
-	        arr[available] = pivot;    	        
+	        }  // end of while  
+	        arr[available] = pivot;  // the pivot is now in the correct position. 
          }
          // now we have a recursive call, to sort the sub-arrays
-         pkSortSub(arr, left, available - 1);
-         pkSortSub(arr, available + 1, right);
+         pkSortSub(arr, low, available - 1);  
+         pkSortSub(arr, available + 1, high);
     }
     ///////////////////////////////////////////////////////////////////////////
     private static double[] generateRandArr(int numElms, Random randGen){
@@ -122,9 +119,8 @@ public class PKSort1 {
     private static void printArr(double[] arr){
     	String str = (arr.length > 0 ? Double.toString(arr[0]) : "");
     	
-    	for ( int i = 1; i < arr.length; i++){
+    	for ( int i = 1; i < arr.length; i++)
     		str += ", " + Double.toString(arr[i]);
-    	}
     	
     	System.out.println(str);
     }  
