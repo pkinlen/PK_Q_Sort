@@ -22,16 +22,17 @@ import java.util.Random;
 
 // Author: Philip Kinlen
 public class PKSort1 {
-
+	
     public static void main(String[] args) {
-         System.out.println("About to run sorter by Philip Kinlen.");
+         System.out.println("About to run a sorting algorithm by Philip Kinlen.");
          System.out.println("It is based on q-sort and aims to be memory efficient.");
          
          Random randGen = new Random(); // have an optional arg, which is the rand seed, 
                                         // default seed is the timer.
                   
-         int numElms = 7;
+         int numElms = 200;
          double[] arr = generateRandArr(numElms, randGen);
+                        // = generateOrderedArr(numElms, true);
          System.out.println("Here's the array before sorting:");
          printArr(arr);
          
@@ -44,65 +45,86 @@ public class PKSort1 {
     // The following sorting algorithm is based on q-sort.
     // It tries to minimise the amount of extra space required
     public static void pkSort(double[] arr){
-    	pkSortSub(arr, 0, arr.length);
+       pkSortSub(arr, 0, arr.length - 1 );
     }
 
-    private static void pkSortSub(double[] arr, int start, int end){
+    private static void pkSortSub(double[] arr, int left, int right){    
+       int available;
     
-        // System.out.println("calling sub with start: " + Integer.toString(start) 
-        //		            + " and end: " + Integer.toString(end));
+       if ( left >= right) // when there are 0 or 1 elements, there is nothing to be done.
+          return;
+       else { // the reason we use this 'else' here is because we want the 'double pivot'
+              // to have been released before we recursively call this function.
 
-    	int available = start;
-    	
-    	if ( start >= end)
-    		return;    	
-    	else { // the reason we use this 'else' here is because we want the 'double pivot' 
-    		   // to have been released before we recursively call this function.
+	       int     mid             = ( right + left ) / 2;
+	       double  pivot;  // we set the pivot to be the median of the left, mid and right elements.
+	       
+	       if ( (arr[right] > arr[left]) == (arr[left] > arr[mid])) {
+	    	   pivot       = arr[left];
+	       } else if ( (arr[left] > arr[mid]) == (arr[mid] > arr[right])) {		    	   
+		       pivot       = arr[mid];
+		       arr[mid]    = arr[left];
+		   } else { 
+	    	   pivot       = arr[right]; 
+	    	   arr[right]  = arr[left];		       
+           }
+	       available = left;
+	    	
+	       boolean workingFromLeft = false;
+	       int     leftIdx         = left;
+	       int     rightIdx        = right + 1;
 
-    		int     numElms          = end - start;
-    		double  pivot            = arr[start];    		
-    		boolean workingFromStart = false; // initially we'll work back from the end
-    		int     leftIdx          = start;
-    		int     rightIdx         = end;
-    		int     current;
-    		
-    		for ( int i = 1; i < numElms; i++){
-              
-    			if (workingFromStart){
-    				leftIdx++;
-    				current = leftIdx;
-    			} else {
-    				rightIdx--;
-    				current = rightIdx;
-    			}
-    			
-    			// for an ascending sort we use a '>' in the following line of code
-    			// ( a descending sort would use '<' )
-    			if ( workingFromStart == (arr[current] > pivot)) { // we need to do a switch
-    				
-    			     workingFromStart = !workingFromStart; // toggle
-    				 arr[available]   = arr[current];
-    				 available        = current;
-    			}
-    		}
-    		
-    		arr[available] = pivot;
-    		
-    	}
-		// now we have a recursive call, to sort the sub-arrays
-        pkSortSub(arr, start, available);
-        pkSortSub(arr, available + 1, end);   		
+	       while ( leftIdx < rightIdx){
+  	           int     current;
+	    	   
+	           if (workingFromLeft){
+	              leftIdx++;
+	              current = leftIdx;
+	           } else {
+	              rightIdx--;
+	              current = rightIdx;
+	           }
+	           
+	           // for an ascending sort we use a '>' in the following lines of code
+	           // ( a descending sort would use '<' )	           
+
+	           // Previously we had the condition:
+	           // if ( workingFromLeft == (arr[current] > pivot)) 
+	           // but that is slightly different in particular when pivot == arr[current]
+	           // In the condition below, only one of the two comparisons operators '>' will be called.
+	           if (   (workingFromLeft  && (arr[current] > pivot))
+                   || (!workingFromLeft && (pivot        > arr[current]))){	        	   
+	        	   
+	               workingFromLeft  = !workingFromLeft; // toggle
+	               arr[available]   = arr[current];
+	               available        = current;
+	           }
+	        }    
+	        arr[available] = pivot;    	        
+         }
+         // now we have a recursive call, to sort the sub-arrays
+         pkSortSub(arr, left, available - 1);
+         pkSortSub(arr, available + 1, right);
     }
-    
-    
+    ///////////////////////////////////////////////////////////////////////////
     private static double[] generateRandArr(int numElms, Random randGen){
     	double[] res = new double[numElms];
-    	for(int i = 0; i < numElms; i++){
+    	
+    	for(int i = 0; i < numElms; i++)
     		res[i] = randGen.nextDouble();
-    	}
+    	
     	return res;
     }
-    
+    ///////////////////////////////////////////////////////////////////////////
+    private static double[] generateOrderedArr(int numElms, boolean increasing){
+    	double[] res = new double[numElms];
+    	
+    	for( int i = 0; i < numElms; i++)
+    		res[i] = ( increasing ? i : numElms - i);
+    	    	
+    	return res;
+    }
+    ///////////////////////////////////////////////////////////////////////////    
     private static void printArr(double[] arr){
     	String str = (arr.length > 0 ? Double.toString(arr[0]) : "");
     	
@@ -111,6 +133,15 @@ public class PKSort1 {
     	}
     	
     	System.out.println(str);
-    }    
+    }  
+    ///////////////////////////////////////////////////////////////////////////
+    private static int medianOfThree( double[] arr, int i1, int i2, int i3){
+    	if ( (arr[i2] > arr[i1]) == (arr[i1] > arr[i3]))
+    		return i1;
+    	else if ( (arr[i1] > arr[i2]) == (arr[i2] > arr[i3]))
+    		return i2;
+    	else
+    		return i3;
+    }
 }    
 
