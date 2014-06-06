@@ -17,7 +17,7 @@ import java.util.Random;
 // Possible extensions:
 // -allow sorting to be both ascending and descending
 // -could it be made generic?
-// -if the arr were put into it's own class, then it need not be passes as a parameter
+// -if the arr were put into it's own class, then it need not be passed as a parameter
 
 // Author: Philip Kinlen
 public class PKSort1 {
@@ -46,7 +46,7 @@ public class PKSort1 {
     public static void pkSort(double[] arr){
        pkSortSub(arr, 0, arr.length - 1 );
     }
-
+    //////////////////////////////////////////////////////////////////////////////
     private static void pkSortSub(double[] arr, int left, int right){    
        int available;
     
@@ -75,25 +75,20 @@ public class PKSort1 {
 
 	       while ( leftIdx < rightIdx){
   	           int     current;
+  	           
+  	           boolean doSwitch;
 	    	   
 	           if (workingFromLeft){
 	              leftIdx++;
-	              current = leftIdx;
+	              current  = leftIdx;
+	              doSwitch = (arr[current] > pivot);
 	           } else {
 	              rightIdx--;
-	              current = rightIdx;
+	              current  = rightIdx;
+	              doSwitch = (pivot > arr[current]);
 	           }
 	           
-	           // for an ascending sort we use a '>' in the following lines of code
-	           // ( a descending sort would use '<' )	           
-
-	           // Previously we had the condition:
-	           // if ( workingFromLeft == (arr[current] > pivot)) 
-	           // but that is slightly different in particular when pivot == arr[current]
-	           // In the condition below, only one of the two comparisons operators '>' will be called.
-	           if (   (workingFromLeft  && (arr[current] > pivot))
-                   || (!workingFromLeft && (pivot        > arr[current]))){	        	   
-	        	   
+	           if( doSwitch){	        	   
 	               workingFromLeft  = !workingFromLeft; // toggle
 	               arr[available]   = arr[current];
 	               available        = current;
