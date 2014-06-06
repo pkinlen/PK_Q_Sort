@@ -52,43 +52,37 @@ public class PKSort1 {
        pkSortSub(arr, 0, arr.length - 1 );
     }
     //////////////////////////////////////////////////////////////////////////////
+    // will sort arr between elements low and high inclusive.
     private static void pkSortSub(double[] arr, int low, int high){    
        int available;
     
        if ( low >= high) // when there are 0 or 1 elements, there is nothing to be done.
           return;
        else { // the reason we use this 'else' here is because we want the 'double pivot'
-              // to have been cleared from the stack before we recursively call this function.
-
-	       int     mid             = ( low + high ) / 2;
-	       double  pivot;  // we set the pivot to be the median of the low, mid and high elements.
-	       
-	       if ( (arr[high] > arr[low]) == (arr[low] > arr[mid])) {
-	    	   pivot       = arr[low];
-	       } else if ( (arr[low] > arr[mid]) == (arr[mid] > arr[high])) {		    	   
-		       pivot       = arr[mid];
-		       arr[mid]    = arr[low];
-		   } else { 
-	    	   pivot       = arr[high]; 
-	    	   arr[high]  = arr[low];		       
-           }
-	       available = low; // we can now write over arr[low]
-	    	
+              // to have been cleared from the stack before we recursively call this function.    	   
+    	   int    initialPivotIdx = medianOfThree( arr, low, (low + high)/2, high );    	   
+    	   double pivot           = arr[initialPivotIdx];
+    	   
+    	   if ( initialPivotIdx != low)
+    		   arr[initialPivotIdx] = arr[low];
+    	   	    	
+    	   available = low;
+    	   
 	       boolean workingFromLow  = false;
 	       int     lowIdx          = low;
 	       int     highIdx         = high + 1;
 
-	       while ( lowIdx < highIdx){
-	    	   
-	           if ((workingFromLow) && (arr[++lowIdx] > pivot)){
+	       while ( (lowIdx+1)  < highIdx){
+	    	   	    	   
+	           if (workingFromLow && (arr[++lowIdx] > pivot)){
 		           arr[available]   = arr[lowIdx];
 		           available        = lowIdx;
-		           workingFromLow   = false;         
-		           
+		           workingFromLow   = false;
+
 	           } else if ((!workingFromLow) && (pivot > arr[--highIdx])){
 		           arr[available]   = arr[highIdx];
 		           available        = highIdx;
-		           workingFromLow   = true;           	            	  
+		           workingFromLow   = true;   		           
 	           }
 	        }  // end of while  
 	        arr[available] = pivot;  // the pivot is now in the correct position. 
