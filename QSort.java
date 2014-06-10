@@ -12,7 +12,14 @@
 // greater than the pivot, we then copy that into the available space near the end.
 // we then continue from near the end
 
-// Author: Philip Kinlen
+// In the standard QSort algorithm, all the elements that are less than the pivot will be
+// swapped, and each swap involves 3 assignments.
+// In this algorithm, the number of assignments of the object being sorted will be 3 times less. 
+// And on each pass, the first element and pivot may be moved twice, 
+// all the others will be moved a maximum of once.
+// However there is some extra overhead.
+
+// Author: Philip Kinlen, (June 2014)
 public class QSort<T extends Comparable<T>> {
 	private T[]      m_arr;
 	
@@ -35,64 +42,107 @@ public class QSort<T extends Comparable<T>> {
     	if ( arr == null)
     		return; // possibly could give a warning.
     	
-        QSort<S> sorter = new QSort<S>(arr);
-        sorter.sortSub(0, arr.length);
-                
-        if ( !ascending)
-        	reverseArr( arr);        
+        Ordering ordering = getOrdering(arr);
+        
+        if (ordering == Ordering.MIXED) {
+            QSort<S> sorter = new QSort<S>(arr);                	
+        	sorter.sortSub(0, arr.length-1);       // The main sorting is done here.
+        	
+        	if ( ! ascending)
+        		reverseArr(arr);
+        	
+        }  else if (  (!ascending && ordering == Ordering.NON_STRICT_ASCENDING )
+        		    ||( ascending && ordering == Ordering.NON_STRICT_DESCENDING) )   
+        	reverseArr(arr);
+        
+        // else nothing more to do
+        	
     }
     //////////////////////////////////////////////////////////////////////////////
-    // will sort m_arr's elements between low inclusive and high exclusive.
+    private static  <S extends Comparable<S>> Ordering getOrdering(S[] arr){
+    	int equalCounter = 0;
+    	int ascCounter   = 0;
+    	int descCounter  = 0;   	
+    	int i            = 1;
+    	    	
+    	while (  (i < arr.length)  &&  (ascCounter * descCounter == 0) ){
+    		int cmp = arr[i-1].compareTo(arr[i]);
+    		
+    		if( cmp == 0)
+    			equalCounter++;
+    		else if( cmp < 0)
+    		    ascCounter++;
+    		else 
+    			descCounter++;
+    		
+    		i++;
+    	}
+
+		if ( equalCounter == (arr.length-1))
+			return Ordering.ALL_EQUAL;
+		else if ( ascCounter == 0)
+			return Ordering.NON_STRICT_DESCENDING;
+		else if ( descCounter == 0)
+			return Ordering.NON_STRICT_ASCENDING;
+		else 
+			return Ordering.MIXED;
+    
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    // will sort m_arr's elements between low and high inclusive.
     private void sortSub(int low, int high){    
        int available; // at run-time we can have up to Order(log(N)) instances of this int
                       // on the stack concurrently.
     	
-       if ( high <= ( low + 1)) // when there are 0 or 1 elements, there is nothing to be done.
+       if ( high <=  low ) // when there are 0 or 1 elements, there is nothing to be done.
           return;
        else { // we use this else branch to ensure that as many temporary variables as possible
     	      // are removed from the stack before the recursive call sortSub(..) below.
-		   m_initialPivotIdx = choosePivotIdx( low, (low + high)/2, high-1 );    	   
+
+		   available         = low;	   
+	       m_workingFromLow  = false;
+	       m_curLow          = low;   // The current low  index. 
+	       m_curHigh         = high;  // The current high index.
+    	       	   
+    	   m_initialPivotIdx = choosePivotIdx();    	   
 		   m_pivot           = m_arr[m_initialPivotIdx];
 		   
 		   if ( m_initialPivotIdx != low)
 			    m_arr[m_initialPivotIdx] = m_arr[low];
 		   	    	
-		   available         = low;	   
-	       m_workingFromLow  = false;
-	       m_curLow          = low;
-	       m_curHigh         = high;
-	
-	       while ( m_curLow  < m_curHigh){
-	    	   
-	           if (m_workingFromLow && greaterThan(m_arr[++m_curLow], m_pivot)){
+	       while ( m_curLow   < m_curHigh){
+
+	           if (m_workingFromLow && m_arr[++m_curLow].compareTo(m_pivot) > 0){
 		           m_arr[available]  = m_arr[m_curLow];
 		           available         = m_curLow;
 		           m_workingFromLow  = false;
 	
-	           } else if ((!m_workingFromLow) && greaterThan(m_pivot, m_arr[--m_curHigh])){
-		           m_arr[available]  = m_arr[m_curHigh];
-		           available         = m_curHigh;
+	           } else if (!m_workingFromLow && m_pivot.compareTo(m_arr[m_curHigh--]) > 0){
+		           m_arr[available]  = m_arr[m_curHigh + 1];
+		           available         = m_curHigh + 1;
 		           m_workingFromLow  = true;   		           
 	           }
 	        }  // end of while  
 	        m_arr[available] = m_pivot;  // the pivot is now in the correct position. 
        } 
        // now we have a recursive call, to sort the sub-arrays
-       sortSub(low,           available);  // we now sort elms from low to (available-1)
-       sortSub(available + 1, high);       // we sort elements from (available+1) to (high-1)
+       sortSub(low,           available -1);  // sorting the elms from low to (available-1)
+       sortSub(available + 1, high);          // sorting the elements from (available+1) to (high)
     }
     ///////////////////////////////////////////////////////////////////////////
-    private int choosePivotIdx( int i1, int i2, int i3){
-    	if ( m_arr[i2].compareTo(m_arr[i1]) * m_arr[i1].compareTo(m_arr[i3]) >= 0)
-    		return i1;
-    	else if ( m_arr[i1].compareTo(m_arr[i2]) * m_arr[i2].compareTo(m_arr[i3]) >= 0)
-    		return i2;
+    private int choosePivotIdx(){
+    	
+    	if ( m_curHigh - m_curLow < 5) // for very small sub arrays we just use m_curLow as the pivot index.
+    		return m_curLow;
+    	
+    	int mid = (m_curLow + m_curHigh ) / 2;
+    	
+    	if ( m_arr[mid].compareTo(m_arr[m_curLow]) * m_arr[m_curLow].compareTo(m_arr[m_curHigh]) >= 0)
+    		return m_curLow;
+    	else if ( m_arr[m_curLow].compareTo(m_arr[mid]) * m_arr[mid].compareTo(m_arr[m_curHigh]) >= 0)
+    		return mid;
     	else
-    		return i3;
-    }
-    //////////////////////////////////////////////////////////////////////////////////
-    private boolean  greaterThan(T a, T b){
-    	return ( a.compareTo(b) > 0);
+    		return m_curHigh;
     }
     ///////////////////////////////////////////////////////////////////////////
     private static <S> void reverseArr(S[] arr){
@@ -116,5 +166,11 @@ public class QSort<T extends Comparable<T>> {
     	m_arr = arr;
     }
     /////////////////////////////////////////////////////////////////////////////
+    private enum Ordering {
+    	ALL_EQUAL,
+    	NON_STRICT_ASCENDING,
+    	NON_STRICT_DESCENDING,
+    	MIXED   	
+    }
 }    
 

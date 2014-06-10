@@ -4,14 +4,18 @@ import java.util.Random;
 public class PK_QSortEG {
 
     public static void main(String[] args) {    	    	
-    	runExamples();
+    	SortBenchmarking.run();
+    	// runExamples();
+    	
+    	
     }
+    
     ///////////////////////////////////////////////////////////////////////
-    private static void runExamples(){
+    public static void runExamples(){
         //Random randGen = new Random(); // have an optional arg, which is the rand seed, 
         //                                // default seed is the timer.                  
         int      numElms            = 6;
-        boolean  initiallyAscending = true;
+        boolean  initiallyAscending = false;
         boolean  sortAscending      = false;
                   	
     	System.out.println("\nAbout to test with non-generic double version.");
@@ -120,5 +124,19 @@ public class PK_QSortEG {
     	System.out.println(str);
     }  
     ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+    public static void testStrings(){
+    	
+        boolean  sortAscending      = false;
+      	
+    	System.out.println("\nAbout to test generic QSort with Strings");
+        String[] arrS               = {"Tom", "Dick", "Harry", "Mary", "Jane", "Sue"};
+    	callPK_QSortWithTestCase(arrS, sortAscending);
+    	
+    	Double[] arrD = {6.0, 7.0, 5.0, 1.0, 10.0};
+    	callPK_QSortWithTestCase(arrD, sortAscending);
+        	
+    }
+
 }    
 
